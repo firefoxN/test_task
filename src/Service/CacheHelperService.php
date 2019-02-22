@@ -31,7 +31,7 @@ class CacheHelperService
         return $data;
     }
 
-    public function setValue(string $cacheKey, string $value, int $lifetime = 0):void
+    public function setValue(string $cacheKey, string $value, ?int $lifetime = null):void
     {
         $cacheItem = $this->cachePool->get($cacheKey);
         if (!$this->cachePool->hasItem($cacheKey)) {
@@ -42,10 +42,7 @@ class CacheHelperService
             $value = $value . '_date_' . $explodedCacheValue[1];
         }
 
-        $this->cachePool->set($cacheKey, $value);
-        if ($lifetime > 0) {
-            $cacheItem->expiresAfter($lifetime);
-        }
+        $this->cachePool->set($cacheKey, $value, $lifetime);
     }
 
     public function getCretedTimestamp(string $cacheKey): ?int
@@ -60,7 +57,7 @@ class CacheHelperService
         return $explodedCacheValue[1];
     }
 
-    public function setCreatedTimestamp(string $cacheKey, int $timestamp, int $lifetime = 0): void
+    public function setCreatedTimestamp(string $cacheKey, int $timestamp, ?int $lifetime = null): void
     {
         if (!$this->cachePool->hasItem($cacheKey)) {
             return;
@@ -69,10 +66,10 @@ class CacheHelperService
         $cacheItem = $this->cachePool->get($cacheKey);
         $explodedCacheValue = explode('_date_', $cacheItem);
 
-        $this->cachePool->set($cacheKey, $explodedCacheValue[0] . '_date_' . $timestamp);
-        if ($lifetime > 0) {
-            $cacheItem->expiresAfter($lifetime);
-        }
+        $this->clearCacheByKey($cacheKey);
+
+        $this->cachePool->set($explodedCacheValue[0] . '_date_' . $timestamp, $cacheItem, $lifetime);
+
     }
 
     public function clearCacheByKey(string $cacheKey)
