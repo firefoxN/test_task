@@ -60,6 +60,21 @@ class CacheHelperService
         return $explodedCacheValue[1];
     }
 
+    public function setCreatedTimestamp(string $cacheKey, int $timestamp, int $lifetime = 0): void
+    {
+        if (!$this->cachePool->hasItem($cacheKey)) {
+            return;
+        }
+
+        $cacheItem = $this->cachePool->get($cacheKey);
+        $explodedCacheValue = explode('_date_', $cacheItem);
+
+        $this->cachePool->set($cacheKey, $explodedCacheValue[0] . '_date_' . $timestamp);
+        if ($lifetime > 0) {
+            $cacheItem->expiresAfter($lifetime);
+        }
+    }
+
     public function clearCacheByKey(string $cacheKey)
     {
         $this->cachePool->deleteItem($cacheKey);

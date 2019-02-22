@@ -15,15 +15,23 @@ class StatService
         $this->entityManager = $entityManager;
     }
 
-    public function setStat($statKey)
+    public function setStat($statKey, $value = 1)
     {
-        $stat = $this->getFromDb($statKey);
-        if (empty($stat)) {
-            $this->saveToDb($statKey, 1);
-        } else {
-            $stat->setStatValue($stat->getStatValue() + 1);
+        $this->entityManager->getConnection()->beginTransaction();
+        try {
+            $stat = $this->getFromDb($statKey);
+            if (empty($stat)) {
+                $this->saveToDb($statKey, $value);
+            } else {
+                $stat->setStatValue($stat->getStatValue() + 1);
 
-            $this->entityManager->flush();
+                $this->entityManager->flush();
+            }
+
+            $this->entityManager->getConnection()->commit();
+        } catch (\Exception $e) {
+            // Rollback on error
+            $this->entityManager->getConnection()->rollback();
         }
     }
 
@@ -33,15 +41,6 @@ class StatService
         $stat = $statRepo->find($statKey);
 
         return $stat;
-    }
-
-    public function saveToDb(string $statKey, $value):void
-    {
-        $stat = new Stat();
-        $stat->setId($statKey);
-        $stat->setStatValue($value);
-        $this->entityManager->persist($stat);
-        $this->entityManager->flush();
     }
 
     public function getUserIpAddr()
@@ -57,5 +56,14 @@ class StatService
         }
 
         return $ip;
+    }
+
+    private function saveToDb(string $statKey, $value):void
+    {
+        $stat = new Stat();
+        $stat->setId($statKey);
+        $stat->setStatValue($value);
+        $this->entityManager->persist($stat);
+        $this->entityManager->flush();
     }
 }
